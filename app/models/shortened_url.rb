@@ -56,7 +56,7 @@ class ShortenedUrl < ActiveRecord::Base
     # calculate recent submissions
     recent = (Time.now - 5.minutes)..Time.now
     num_recent = creator.short_urls.where(created_at: recent).count
-    unless num_recent < 5
+    unless (num_recent < 5 || creator.premium)
       self.errors[:frequency] << "You are using this service way too freaking much!"
     end
   end
