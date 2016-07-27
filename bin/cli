@@ -1,0 +1,28 @@
+while true
+  puts "Input your email"
+  email = gets.chomp
+  user = User.find_by(email: email)
+  p user
+
+  puts "What do you want to do?"
+  puts "0. Create Shortened Url"
+  puts "1. Visit Shortened Url"
+  action = gets.chomp
+
+  if action.to_i == 0
+    puts "Type in long url"
+    long_url = gets.chomp
+    short_url = ShortenedUrl.create_for_user_and_long_url!(user, long_url)
+    unless short_url.valid?
+      puts "You have already created the max amount."
+    else
+      puts "You short url is #{short_url.short_url}"
+    end
+  elsif action.to_i == 1
+    puts "Type in short url"
+    short_url = gets.chomp
+    short_url_object = ShortenedUrl.find_by(short_url: short_url)
+    puts "Launching #{short_url_object.long_url}..."
+    Visit.record_visit!(user, short_url_object)
+  end
+end
