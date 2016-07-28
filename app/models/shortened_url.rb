@@ -49,7 +49,8 @@ class ShortenedUrl < ActiveRecord::Base
 
   def self.create_for_user_and_long_url!(user, long_url)
     short_url = ShortenedUrl.random_code
-    ShortenedUrl.create(short_url: short_url, long_url: long_url, creator_id: user.id)
+    new_url = ShortenedUrl.create(short_url: short_url, long_url: long_url, creator_id: user.id)
+    Visit.record_visit!(user, new_url)
   end
 
   def frequency_limit
@@ -62,7 +63,7 @@ class ShortenedUrl < ActiveRecord::Base
   end
 
   def num_clicks
-    visits.length
+    visits.length - 1
   end
 
   def num_uniques
@@ -73,6 +74,16 @@ class ShortenedUrl < ActiveRecord::Base
   def num_recent_uniques
     recent = (Time.now - 10.minutes)..Time.now
     visits.select(:user_id).where(created_at: recent).distinct.count
+  end
+
+  def self.prune(n)
+    recent = (Time.now - n.minutes)..Time.now
+    debugger
+    recent_urls = Visit.pluck(:short_url_id).where(created_at: recent) #.map { |visit| visit.short_url_id }
+    premium_users = User.pluck(:id).where(premium: true)
+    premium_sites = ShortenedUrl.pluck(:id).where(creator_id: premium_users)
+    save_urls = premium_sites + recent_urls
+    ShortenedUrl.where.not(id: save_urls).destroy_all
   end
 
 end
